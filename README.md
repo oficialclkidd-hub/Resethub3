@@ -194,3 +194,155 @@ TabConfig:AddSlider({
 })
 
 Window:SelectTab(TabInfo)
+
+local WindUI = loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua"))()
+
+-- 1. Janela Principal
+local Window = WindUI:CreateWindow({
+    Title = "Cat Hub Admin",
+    Icon = "shield",
+    Author = "by .ftgs",
+    Folder = "CatHubFix",
+    Size = UDim2.fromOffset(580, 460),
+    Transparent = true,
+    Theme = "Dark",
+    SideBarWidth = 200,
+    User = {
+        Enabled = true,
+        Title = "Admin Ativo",
+        Subtitle = game.Players.LocalPlayer.Name
+    }
+})
+
+local lp = game.Players.LocalPlayer
+local SelectedPlayer = nil
+
+-- 2. Função para capturar a lista real de jogadores (Você + Outros)
+local function GetPlayerNames()
+    local names = {}
+    for _, v in pairs(game.Players:GetPlayers()) do
+        table.insert(names, v.Name)
+    end
+    return names
+end
+
+-- 3. Aba de Comandos
+local AdminTab = Window:Tab({ Title = "Comandos", Icon = "terminal" })
+
+-- 4. Dropdown (Inicia com a lista de quem já está no servidor)
+local PlayerDropdown = AdminTab:Dropdown({
+    Title = "Selecionar Jogador",
+    Multi = false,
+    Options = GetPlayerNames(),
+    Callback = function(v)
+        SelectedPlayer = game.Players:FindFirstChild(v)
+    end
+})
+
+-- 5. Botão de Atualizar (Usa o método SetOptions da WindUI)
+AdminTab:Button({
+    Title = "Atualizar Lista de Players",
+    Icon = "refresh-cw",
+    Callback = function()
+        local listaAtualizada = GetPlayerNames()
+        PlayerDropdown:SetOptions(listaAtualizada) -- Arrumado aqui
+        WindUI:Notify({
+            Title = "Cat Hub",
+            Content = "Lista de jogadores atualizada!",
+            Duration = 2
+        })
+    end
+})
+
+AdminTab:Section({ Title = "Ações Administrativas" })
+
+-- 6. Comandos ADM
+AdminTab:Button({
+    Title = "Kick",
+    Callback = function()
+        if SelectedPlayer then
+            SelectedPlayer:Kick("expulsado pelo o painel ADM do Cat hub")
+        end
+    end
+})
+
+AdminTab:Button({
+    Title = "Freeze",
+    Callback = function()
+        if SelectedPlayer and SelectedPlayer.Character then
+            SelectedPlayer.Character.HumanoidRootPart.Anchored = true
+        end
+    end
+})
+
+AdminTab:Button({
+    Title = "Unfreeze",
+    Callback = function()
+        if SelectedPlayer and SelectedPlayer.Character then
+            SelectedPlayer.Character.HumanoidRootPart.Anchored = false
+        end
+    end
+})
+
+AdminTab:Button({
+    Title = "Jail",
+    Callback = function()
+        if SelectedPlayer and SelectedPlayer.Character then
+            local pos = SelectedPlayer.Character.HumanoidRootPart.Position
+            local jailModel = Instance.new("Model", workspace)
+            jailModel.Name = "CatJail_" .. SelectedPlayer.Name
+            
+            local function createPart(size, offset)
+                local p = Instance.new("Part", jailModel)
+                p.Size = size
+                p.Position = pos + offset
+                p.Anchored = true
+                p.Material = Enum.Material.ForceField
+                p.BrickColor = BrickColor.new("Really black")
+            end
+            
+            createPart(Vector3.new(10, 1, 10), Vector3.new(0, -5, 0)) -- Chão
+            createPart(Vector3.new(1, 10, 10), Vector3.new(5, 0, 0))  -- Parede
+            createPart(Vector3.new(1, 10, 10), Vector3.new(-5, 0, 0)) -- Parede
+            createPart(Vector3.new(10, 10, 1), Vector3.new(0, 0, 5))  -- Parede
+            createPart(Vector3.new(10, 10, 1), Vector3.new(0, 0, -5)) -- Parede
+            
+            SelectedPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(pos)
+        end
+    end
+})
+
+AdminTab:Button({
+    Title = "Unjail",
+    Callback = function()
+        if SelectedPlayer then
+            local j = workspace:FindFirstChild("CatJail_" .. SelectedPlayer.Name)
+            if j then j:Destroy() end
+        end
+    end
+})
+
+AdminTab:Button({
+    Title = "Kill",
+    Callback = function()
+        if SelectedPlayer and SelectedPlayer.Character then
+            SelectedPlayer.Character.Humanoid.Health = 0
+        end
+    end
+})
+
+-- 7. Auto-update: Atualiza a lista sozinho quando alguém entra ou sai
+game.Players.PlayerAdded:Connect(function()
+    PlayerDropdown:SetOptions(GetPlayerNames())
+end)
+
+game.Players.PlayerRemoving:Connect(function()
+    PlayerDropdown:SetOptions(GetPlayerNames())
+end)
+
+WindUI:Notify({
+    Title = "Painel Arrumado",
+    Content = "Seu nome e dos players agora aparecem!",
+    Duration = 5,
+    Image = "check"
+})
